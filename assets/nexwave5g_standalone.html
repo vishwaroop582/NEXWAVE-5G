@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEXWAVE 5G – Private 5G vs Wi-Fi Simulation</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f5f9;--pn:#fff;--ink:#14203a;--mu:#5a6780;--ln:#d6dce8;--w:#c77a00;--g:#007f78;--bad:#c62f3b;--ok:#1b8a4b;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1220;--pn:#131d31;--ink:#e6ecf8;--mu:#93a1bd;--ln:#27344f;--w:#f0a73a;--g:#2fd3c7;--bad:#ff6b76;--ok:#4cd98a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b1220;--pn:#131d31;--ink:#e6ecf8;--mu:#93a1bd;--ln:#27344f;--w:#f0a73a;--g:#2fd3c7;--bad:#ff6b76;--ok:#4cd98a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+header{padding:20px 20px 8px;max-width:1100px;margin:auto}
+h1{margin:0;font-size:26px;letter-spacing:.2px}h1 b{color:var(--g)}
+header p{margin:2px 0 0;color:var(--mu)}
+nav{display:flex;gap:6px;flex-wrap:wrap;padding:10px 20px;max-width:1100px;margin:auto}
+nav button{font:inherit;border:1px solid var(--ln);background:var(--pn);color:var(--ink);padding:8px 14px;border-radius:8px;cursor:pointer}
+nav button.on{background:var(--g);color:#031a19;border-color:var(--g);font-weight:600}
+main{max-width:1100px;margin:auto;padding:0 20px 40px}
+section{display:none}section.on{display:block}
+.pn{background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:14px;margin-top:14px}
+h2{font-size:18px;margin:4px 0 6px}h3{font-size:15px;margin:0 0 6px}
+.mu{color:var(--mu);font-size:13px}
+canvas{width:100%;height:auto;display:block;border-radius:8px;background:#0e1726}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.stat{display:flex;gap:18px;flex-wrap:wrap}.stat div{min-width:110px}
+.stat b{display:block;font-size:22px}
+.w{color:var(--w)}.g{color:var(--g)}.bad{color:var(--bad)}.ok{color:var(--ok)}
+.ctl{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.ctl label{display:flex;flex-direction:column;font-size:13px;color:var(--mu);gap:2px}
+.ctl input[type=range]{width:170px}
+button.a{font:inherit;background:var(--g);color:#031a19;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600}
+button.a.s{background:var(--pn);color:var(--ink);border:1px solid var(--ln)}
+.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:6px 10px;border-bottom:1px solid var(--ln);text-align:left;white-space:nowrap}
+ul.log{margin:6px 0 0;padding-left:18px;font-size:13px;max-height:150px;overflow:auto}
+.bar{height:10px;border-radius:5px;background:var(--ln);margin:3px 0 8px;overflow:hidden}.bar i{display:block;height:100%}
+.lg span{display:inline-block;margin-right:14px;font-size:13px}
+.note{font-size:12.5px;color:var(--mu);border-left:3px solid var(--w);padding-left:10px;margin-top:14px}
+</style></head><body>
+<header><h1>NEXWAVE <b>5G</b></h1><p>Intelligent Private 5G network simulation platform: Wi-Fi vs Private 5G on an industrial campus</p></header>
+<nav id="nav"></nav>
+<main>
+<section id="s0"><div class="pn"><h2>Campus overview</h2>
+<p class="mu">A simulated 400 m × 240 m industrial campus with six buildings, 3 Wi-Fi access points, 4 private-5G small cells and 80 connected devices.</p>
+<canvas id="c0" width="800" height="480"></canvas>
+<p class="lg"><span class="w">◆ Wi-Fi access point (3)</span><span class="g">● 5G small cell (4)</span><span>🔴 URLLC robots/AGVs &nbsp;🟡 mMTC sensors &nbsp;🔵 eMBB CCTV</span></p></div></section>
+
+<section id="s1"><div class="pn"><h2>Coverage analysis</h2>
+<p class="mu">Signal strength from a log-distance path-loss model with wall penetration loss. Usable signal threshold: −82 dBm for both networks.</p>
+<div class="grid"><div><h3 class="w">Wi-Fi (5 GHz, 3 APs)</h3><canvas id="c1w" width="800" height="480"></canvas><div class="stat"><div><b id="cw" class="w"></b>area covered</div></div></div>
+<div><h3 class="g">Private 5G (3.5 GHz n78, 4 small cells)</h3><canvas id="c1g" width="800" height="480"></canvas><div class="stat"><div><b id="cg" class="g"></b>area covered</div></div></div></div>
+<p class="mu">Colour scale: red = weak, green = strong signal.</p></div></section>
+
+<section id="s2"><div class="pn"><h2>Mobility simulation</h2>
+<p class="mu">An autonomous robot drives a loop through the campus. Each network picks a serving cell and performs handovers. Wi-Fi uses sticky-client roaming (8 dB hysteresis, 90–300 ms); 5G uses 3 dB hysteresis (10–25 ms).</p>
+<div class="ctl"><button class="a" id="run">Start</button><button class="a s" id="rst">Reset</button>
+<label>Speed <input type="range" id="spd" min="1" max="5" value="2"></label>
+<label>Heatmap <select id="hm"><option value="">None</option><option value="w">Wi-Fi</option><option value="g">5G</option></select></label></div>
+<canvas id="c2" width="800" height="480"></canvas>
+<div class="grid"><div class="pn"><h3 class="w">Wi-Fi</h3><div class="stat" id="mw"></div><ul class="log" id="lw"></ul></div>
+<div class="pn"><h3 class="g">Private 5G</h3><div class="stat" id="mg"></div><ul class="log" id="lg"></ul></div></div>
+<div class="pn"><h3>Serving signal (dBm), last 240 samples</h3><canvas id="c2s" width="800" height="220"></canvas>
+<p class="mu"><span class="w">━ Wi-Fi</span> &nbsp; <span class="g">━ 5G</span> &nbsp; dashed = −82 dBm threshold</p></div></div></section>
+
+<section id="s3"><div class="pn"><h2>QoS analysis</h2>
+<p class="mu">Robot control (URLLC, 3 Mbps each), CCTV video (eMBB, 8 Mbps each), guest internet (4 Mbps each) and IoT sensors (mMTC, 0.05 Mbps each) share one network. Turn on priority queues to protect robot traffic.</p>
+<div class="ctl">
+<label>Robots <span id="vr"></span><input type="range" id="r" min="1" max="30" value="10"></label>
+<label>CCTV cameras <span id="vc"></span><input type="range" id="c" min="0" max="40" value="12"></label>
+<label>Guest users <span id="vg"></span><input type="range" id="g" min="0" max="200" value="40"></label>
+<label>IoT sensors <span id="vi"></span><input type="range" id="i" min="0" max="2000" value="300"></label>
+<label><span>Priority queues</span><input type="checkbox" id="pq" checked></label></div>
+<div class="sc"><table id="qt"></table></div>
+<h3 style="margin-top:14px">Robot latency (ms) as guest users increase</h3>
+<canvas id="c3" width="800" height="240"></canvas>
+<p class="mu"><span class="w">━ Wi-Fi</span> &nbsp; <span class="g">━ 5G</span> &nbsp; dashed = 10 ms URLLC target</p></div></section>
+
+<section id="s4"><div class="pn"><h2>Security: device authentication</h2>
+<p class="mu">5G uses SIM-style challenge-response: the network sends a random challenge, and only a device holding the registered key can answer correctly. Wi-Fi here uses a shared password. (Simulated; not real 5G-AKA.)</p>
+<div class="ctl"><button class="a" id="auth">Connect all devices</button><label><span>Wi-Fi password leaked to rogue device</span><input type="checkbox" id="leak"></label></div>
+<div class="sc"><table id="at"><tr><th>Device</th><th>Wi-Fi</th><th>Private 5G</th></tr></table></div>
+<ul class="log" id="alog"></ul></div></section>
+
+<section id="s5"><div class="pn"><h2>Final comparison: the 5G service triangle</h2>
+<p class="mu">Uses your current QoS settings and the mobility run. Run the mobility simulation first for handover figures.</p>
+<div id="sum" class="grid"></div></div>
+<p class="note">All values are simulated from documented assumptions (log-distance path loss, queueing-delay model, hysteresis-based handover). They are not measured real-world 5G results.</p></section>
+</main>
+<script>
+const $=id=>document.getElementById(id),W=800,H=480,S=.5,THR=-82;
+const B=[[40,40,220,140,'Warehouse A'],[320,40,200,140,'Manufacturing'],[580,40,180,140,'Assembly line'],[40,300,200,140,'Logistics hub'],[320,320,160,120,'Control room'],[560,300,200,140,'Admin & guest']];
+const WIFI=[[130,240],[400,240],[670,240]],CELL=[[110,240],[300,240],[500,240],[700,240]];
+const inB=(x,y)=>B.findIndex(b=>x>=b[0]&&x<=b[0]+b[2]&&y>=b[1]&&y<=b[1]+b[3]);
+function walls(a,b,c,d){let n=0,p=inB(a,b);for(let i=1;i<=16;i++){const q=inB(a+(c-a)*i/16,b+(d-b)*i/16);if(q!=p&&q>=0)n++;p=q}return n}
+function rss(k,p,x,y){const d=Math.max(1,Math.hypot(p[0]-x,p[1]-y)*S),w=walls(p[0],p[1],x,y);
+return k=='w'?23-(47+33*Math.log10(d))-8*w:35-(43.3+32*Math.log10(d))-5*w}
+const best=(k,x,y)=>Math.max(...(k=='w'?WIFI:CELL).map(p=>rss(k,p,x,y)));
+const heat={};function mkHeat(k){const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');let ok=0,n=0;
+for(let gx=0;gx<W;gx+=10)for(let gy=0;gy<H;gy+=10){const v=best(k,gx+5,gy+5);n++;if(v>=THR)ok++;x.fillStyle=`hsla(${Math.max(0,Math.min(1,(v+100)/45))*135},75%,48%,.85)`;x.fillRect(gx,gy,10,10)}
+return{c,pct:ok/n*100}}
+heat.w=mkHeat('w');heat.g=mkHeat('g');
+let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+const DEV=[];for(let i=0;i<80;i++){DEV.push([rnd()*W,rnd()*H,i<12?'#ff4d5a':i<26?'#4da3ff':'#ffd23f'])}
+function campus(ctx,o={}){ctx.fillStyle='#0e1726';ctx.fillRect(0,0,W,H);if(o.heat)ctx.drawImage(heat[o.heat].c,0,0);
+ctx.font='13px sans-serif';B.forEach(b=>{ctx.fillStyle='rgba(20,30,50,.78)';ctx.fillRect(b[0],b[1],b[2],b[3]);ctx.strokeStyle='#6c7da0';ctx.strokeRect(b[0],b[1],b[2],b[3]);ctx.fillStyle='#cdd7ea';ctx.fillText(b[4],b[0]+8,b[1]+18)});
+if(o.dev)DEV.forEach(d=>{ctx.fillStyle=d[2];ctx.beginPath();ctx.arc(d[0],d[1],3.5,0,7);ctx.fill()});
+if(o.rings)CELL.forEach(p=>{ctx.strokeStyle='rgba(47,211,199,.25)';ctx.beginPath();ctx.arc(p[0],p[1],110,0,7);ctx.stroke()});
+if(o.links){const[x,y]=o.links.pos;[['w',WIFI,'#f0a73a'],['g',CELL,'#2fd3c7']].forEach(([k,n,col])=>{const s=M.n[k].srv;if(s>=0){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.setLineDash(k=='w'?[6,4]:[]);ctx.beginPath();ctx.moveTo(n[s][0],n[s][1]);ctx.lineTo(x,y);ctx.stroke();ctx.setLineDash([]);ctx.lineWidth=1}})}
+WIFI.forEach((p,i)=>{ctx.fillStyle='#f0a73a';ctx.beginPath();ctx.moveTo(p[0],p[1]-9);ctx.lineTo(p[0]+9,p[1]);ctx.lineTo(p[0],p[1]+9);ctx.lineTo(p[0]-9,p[1]);ctx.fill();ctx.fillStyle='#fff';ctx.fillText('AP'+(i+1),p[0]-10,p[1]+24)});
+CELL.forEach((p,i)=>{ctx.fillStyle='#2fd3c7';ctx.beginPath();ctx.arc(p[0],p[1],8,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText('SC'+(i+1),p[0]-10,p[1]-14)});
+if(o.links){const[x,y]=o.links.pos;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.fill();ctx.strokeStyle='#ff4d5a';ctx.lineWidth=3;ctx.stroke();ctx.lineWidth=1;ctx.fillStyle='#fff';ctx.fillText('AGV-01',x-20,y-14)}}
+function line(c,series,ymin,ymax,hl,xmax){const x=c.getContext('2d'),w=c.width,h=c.height;x.fillStyle='#0e1726';x.fillRect(0,0,w,h);x.strokeStyle='#27344f';x.fillStyle='#93a1bd';x.font='12px sans-serif';
+for(let i=0;i<=4;i++){const y=h-20-(h-30)*i/4;x.beginPath();x.moveTo(40,y);x.lineTo(w,y);x.stroke();x.fillText(Math.round(ymin+(ymax-ymin)*i/4),4,y+4)}
+const Y=v=>h-20-(h-30)*Math.max(0,Math.min(1,(v-ymin)/(ymax-ymin)));
+if(hl!=null){x.setLineDash([5,5]);x.strokeStyle='#ff6b76';x.beginPath();x.moveTo(40,Y(hl));x.lineTo(w,Y(hl));x.stroke();x.setLineDash([])}
+series.forEach(s=>{x.strokeStyle=s.c;x.lineWidth=2;x.beginPath();s.d.forEach((v,i)=>{const px=40+(w-40)*i/(Math.max(xmax,s.d.length-1)||1);i?x.lineTo(px,Y(v)):x.moveTo(px,Y(v))});x.stroke();x.lineWidth=1})}
+// ---- mobility
+const PATH=[[20,210],[300,210],[300,270],[620,270],[620,210],[780,210]],SEG=[];let PL=0;
+for(let i=1;i<PATH.length;i++){const l=Math.hypot(PATH[i][0]-PATH[i-1][0],PATH[i][1]-PATH[i-1][1]);SEG.push(l);PL+=l}
+function posAt(s){s%=2*PL;if(s>PL)s=2*PL-s;for(let i=0;i<SEG.length;i++){if(s<=SEG[i]){const a=PATH[i],b=PATH[i+1],f=s/SEG[i];return[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f]}s-=SEG[i]}return PATH[0]}
+let M,run=false,last=0;
+const nn=()=>({srv:-1,ev:[],hoMs:0,out:0,tot:0,h:[],cur:0});
+function reset(){M={s:0,t:0,n:{w:nn(),g:nn()}};run=false;$('run').textContent='Start'}
+function step(k,x,y,dt){const N=M.n[k],nodes=k=='w'?WIFI:CELL,hys=k=='w'?8:3,r=nodes.map(p=>rss(k,p,x,y));let bi=0;r.forEach((v,i)=>{if(v>r[bi])bi=i});
+if(N.srv<0)N.srv=bi;else if(bi!=N.srv&&r[bi]>r[N.srv]+hys){const d=k=='w'?90+Math.random()*210:10+Math.random()*15;N.ev.unshift({t:M.t,f:N.srv,to:bi,d});N.hoMs+=d;N.srv=bi}
+N.cur=r[N.srv];if(N.cur<THR)N.out+=dt;N.tot+=dt;N.h.push(N.cur);if(N.h.length>240)N.h.shift()}
+const pre=k=>k=='w'?'AP':'SC';
+function mobUI(){[['w','mw','lw'],['g','mg','lg']].forEach(([k,a,b])=>{const N=M.n[k];$(a).innerHTML=`<div><b>${N.ev.length}</b>handovers</div><div><b>${N.ev.length?Math.round(N.hoMs/N.ev.length):0} ms</b>avg delay</div><div><b>${N.tot?(N.out/N.tot*100).toFixed(0):0}%</b>time in outage</div><div><b>${N.cur.toFixed(0)} dBm</b>serving signal</div>`;
+$(b).innerHTML=N.ev.slice(0,8).map(e=>`<li>t=${e.t.toFixed(1)} s: ${pre(k)}${e.f+1} → ${pre(k)}${e.to+1}, interruption ${e.d.toFixed(0)} ms</li>`).join('')})}
+function mobDraw(){const pos=posAt(M.s);campus($('c2').getContext('2d'),{heat:$('hm').value,links:{pos},rings:1});
+line($('c2s'),[{c:'#f0a73a',d:M.n.w.h},{c:'#2fd3c7',d:M.n.g.h}],-110,-40,THR,239);mobUI()}
+function tick(ts){if(run){const dt=Math.min(.05,(ts-last)/1000)*$('spd').value;M.s+=40*dt;M.t+=dt;const p=posAt(M.s);step('w',p[0],p[1],dt);step('g',p[0],p[1],dt)}last=ts;if(cur==2)mobDraw();requestAnimationFrame(tick)}
+// ---- QoS
+function qos(k,p){const dev=p.r+p.c+p.g+p.i,C=k=='w'?250/(1+.004*dev):450/(1+.0003*dev),dr=p.r*3,dc=p.c*8,dg=p.g*4,di=p.i*.05,D=dr+dc+dg+di,rho=D/C,lk=k=='w'?.35:.04;
+const base=k=='w'?6:4,kk=k=='w'?1.4:.6,l0=k=='w'?.2:.01;
+const eff=[p.pq?dr/C+lk*(rho-dr/C):rho,p.pq?(dr+dc)/C+lk*(rho-(dr+dc)/C):rho,rho],dm=[dr,dc,dg];
+return{C,rho,D,rows:eff.map((e,i)=>{const lat=base+kk*8*e/(1-Math.min(e,.97)),loss=Math.min(100,l0+(e>.8?3*((e-.8)/.2)**2:0)+(e>1?100*(1-1/e):0));return{lat,loss,thr:dm[i]*Math.min(1,1/Math.max(e,1))}})}}
+const P=()=>({r:+$('r').value,c:+$('c').value,g:+$('g').value,i:+$('i').value,pq:$('pq').checked});
+function qosUI(){const p=P();['r','c','g','i'].forEach(k=>$('v'+k).textContent='('+p[k]+')');const a=qos('w',p),b=qos('g',p),nm=['Robot control (URLLC)','CCTV video (eMBB)','Guest internet'];
+const f=(r,t)=>r.lat<=10&&r.loss<.1&&t==0?'ok':r.loss>1||r.lat>50?'bad':'';
+$('qt').innerHTML='<tr><th>Traffic</th><th class="w">Wi-Fi latency</th><th class="w">Wi-Fi loss</th><th class="g">5G latency</th><th class="g">5G loss</th></tr>'+nm.map((n,i)=>`<tr><td>${n}</td><td class="${f(a.rows[i],i)}">${a.rows[i].lat.toFixed(1)} ms</td><td>${a.rows[i].loss.toFixed(2)}%</td><td class="${f(b.rows[i],i)}">${b.rows[i].lat.toFixed(1)} ms</td><td>${b.rows[i].loss.toFixed(2)}%</td></tr>`).join('')+`<tr><td>Offered load / capacity</td><td colspan=2>${a.D.toFixed(0)} / ${a.C.toFixed(0)} Mbps (${(a.rho*100).toFixed(0)}%)</td><td colspan=2>${b.D.toFixed(0)} / ${b.C.toFixed(0)} Mbps (${(b.rho*100).toFixed(0)}%)</td></tr>`;
+const xs=[...Array(41).keys()].map(i=>i*5),dw=[],dg=[];xs.forEach(g=>{const q={...p,g};dw.push(qos('w',q).rows[0].lat);dg.push(qos('g',q).rows[0].lat)});
+line($('c3'),[{c:'#f0a73a',d:dw},{c:'#2fd3c7',d:dg}],0,100,10,40)}
+// ---- security
+const h=s=>{let x=5381;for(const c of s)x=((x<<5)+x+c.charCodeAt(0))>>>0;return x.toString(16)};
+const DV=[{n:'AGV Robot-01',k:'K-7F3A'},{n:'CCTV Cam-12',k:'K-91C2'},{n:'IoT Sensor-A7',k:'K-44D0'},{n:'Staff tablet',k:'K-B60E'},{n:'Rogue laptop',k:'K-0000',rogue:1}];
+const REG={'AGV Robot-01':'K-7F3A','CCTV Cam-12':'K-91C2','IoT Sensor-A7':'K-44D0','Staff tablet':'K-B60E'},PW='campus-wifi';
+let authRes={};
+function auth(){const lg=[],leak=$('leak').checked;authRes={};
+$('at').innerHTML='<tr><th>Device</th><th class="w">Wi-Fi (shared password)</th><th class="g">Private 5G (challenge-response)</th></tr>'+DV.map(d=>{
+const w=!d.rogue||leak,rand=Math.random().toString(16).slice(2,8),exp=REG[d.n]&&h(REG[d.n]+rand),g=exp&&h(d.k+rand)==exp;authRes[d.n]={w,g};
+lg.push(`<li>${d.n}: 5G challenge ${rand} → response ${h(d.k+rand)} ${g?'matches registry → ALLOWED':'rejected (unknown key) → DENIED'}; Wi-Fi ${w?'password accepted':'wrong password'}</li>`);
+const c=(v)=>`<td class="${v?(d.rogue?'bad':'ok'):(d.rogue?'ok':'bad')}">${v?'Allowed':'Denied'}</td>`;return`<tr><td>${d.n}</td>${c(w)}${c(g)}</tr>`}).join('');$('alog').innerHTML=lg.join('')}
+// ---- summary
+function summary(){const p=P(),a=qos('w',p),b=qos('g',p),hw=M.n.w,hg=M.n.g,mm=k=>{let m=0;for(let i=0;i<=20000;i+=50){if(qos(k,{...p,i}).rho<.8)m=i}return m},mw=mm('w'),mg=mm('g');
+const row=(l,x,y,u,mx,inv)=>{const pw=Math.min(100,x/mx*100),pg=Math.min(100,y/mx*100);return`<div><div class="mu">${l}</div><div class="w">Wi-Fi: <b>${x.toFixed(x<10?1:0)}${u}</b></div><div class="bar"><i style="width:${pw}%;background:var(--w)"></i></div><div class="g">5G: <b>${y.toFixed(y<10?1:0)}${u}</b></div><div class="bar"><i style="width:${pg}%;background:var(--g)"></i></div></div>`};
+const ho=(N)=>N.ev.length?N.hoMs/N.ev.length:0,au=authRes['Rogue laptop']||{};
+$('sum').innerHTML=`<div class="pn"><h3>eMBB: throughput and video</h3>${row('Delivered traffic',Math.min(a.D,a.C),Math.min(b.D,b.C),' Mbps',500)}${row('Peak capacity',a.C,b.C,' Mbps',500)}${row('Coverage of campus',heat.w.pct,heat.g.pct,'%',100)}</div>
+<div class="pn"><h3>URLLC: latency and reliability</h3>${row('Robot latency',a.rows[0].lat,b.rows[0].lat,' ms',100)}${row('Robot packet loss',a.rows[0].loss,b.rows[0].loss,'%',5)}${row('Avg handover delay'+(hw.ev.length?'':' (run mobility first)'),ho(hw),ho(hg),' ms',300)}</div>
+<div class="pn"><h3>mMTC: connected IoT devices</h3>${row('IoT sensors before 80% load',mw,mg,'',Math.max(mg,1))}<h3 style="margin-top:12px">Security</h3><p>Rogue device: Wi-Fi <b class="${au.w?'bad':'ok'}">${au.w==null?'not tested':au.w?'allowed':'denied'}</b>, 5G <b class="${au.g?'bad':'ok'}">${au.g==null?'not tested':au.g?'allowed':'denied'}</b></p></div>`}
+// ---- nav
+const T=['Campus overview','Coverage','Mobility','QoS','Security','Comparison'];let cur=0;
+function go(i){cur=i;document.querySelectorAll('section').forEach((s,j)=>s.classList.toggle('on',j==i));[...$('nav').children].forEach((b,j)=>b.classList.toggle('on',j==i));
+if(i==0)campus($('c0').getContext('2d'),{dev:1,rings:1});
+if(i==1){$('c1w').getContext('2d').drawImage(heat.w.c,0,0);$('c1g').getContext('2d').drawImage(heat.g.c,0,0);[['c1w'],['c1g']].forEach(([id],j)=>{const x=$(id).getContext('2d');B.forEach(b=>{x.strokeStyle='#fff';x.strokeRect(b[0],b[1],b[2],b[3])});(j?CELL:WIFI).forEach(p=>{x.fillStyle=j?'#031a19':'#3a2400';x.beginPath();x.arc(p[0],p[1],7,0,7);x.fill();x.strokeStyle='#fff';x.stroke()})});$('cw').textContent=heat.w.pct.toFixed(0)+'%';$('cg').textContent=heat.g.pct.toFixed(0)+'%'}
+if(i==3)qosUI();if(i==4&&!Object.keys(authRes).length)auth();if(i==5)summary()}
+T.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>go(i);$('nav').appendChild(b)});
+$('run').onclick=()=>{run=!run;$('run').textContent=run?'Pause':'Resume'};$('rst').onclick=reset;
+['r','c','g','i','pq'].forEach(k=>$(k).oninput=qosUI);$('auth').onclick=auth;$('leak').onchange=auth;
+reset();go(0);requestAnimationFrame(tick);
+</script></body></html>
